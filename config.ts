@@ -4,7 +4,7 @@
 export const THEME_COLOR: 'BLUE' | 'GREEN' = 'BLUE';
 
 // Payment Modes: 'TRUE' (Paystack), 'FALSE' (Transfer), 'NEUTRAL' (Transfer + Opay)
-export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'NEUTRAL';
+export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'FALSE';
 
 // If true, user goes to Dashboard (Demo Mode) after signup. 
 // If false, user goes directly to Payment page.
@@ -18,7 +18,7 @@ export const SUPPORT_CONTACT = {
   showOnHome: true, // Show FAB on homepage
   method: 'WHATSAPP' as 'WHATSAPP' | 'TELEGRAM', // Toggle between 'WHATSAPP' and 'TELEGRAM'
   whatsappNumber: "2349012345678", 
-  telegramUrl: "https://t.me/streamafrica_official"
+  telegramUrl: "https://t.me/official_vendor_md"
 };
 
 // Groq AI Configuration for Payment Verification

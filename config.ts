@@ -4,7 +4,7 @@
 export const THEME_COLOR: 'BLUE' | 'GREEN' = 'BLUE';
 
 // Payment Modes: 'TRUE' (Paystack), 'FALSE' (Transfer), 'NEUTRAL' (Transfer + Opay)
-export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'FALSE';
+export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'NEUTRAL';
 
 // If true, user goes to Dashboard (Demo Mode) after signup. 
 // If false, user goes directly to Payment page.
@@ -18,13 +18,13 @@ export const SUPPORT_CONTACT = {
   showOnHome: true, // Show FAB on homepage
   method: 'WHATSAPP' as 'WHATSAPP' | 'TELEGRAM', // Toggle between 'WHATSAPP' and 'TELEGRAM'
   whatsappNumber: "2349012345678", 
-  telegramUrl: "https://t.me/official_vendor_md"
+  telegramUrl: "https://t.me/streamafrica_official"
 };
 
-// Groq AI Configuration for Payment Verification
+// Gemini AI Configuration for Payment Verification
 // SECURITY UPDATE: We now use an environment variable.
-// Do NOT paste the key here directly. Add VITE_GROQ_API_KEY to your Vercel/Netlify dashboard.
-export const GROQ_API_KEY = (import.meta as any).env?.VITE_GROQ_API_KEY || ""; 
+// Do NOT paste the key here directly. Add VITE_GEMINI_API_KEY to your Vercel/Netlify dashboard.
+export const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY || ""; 
 
 // Opay Configuration
 // TEST/SANDBOX KEY provided
@@ -39,15 +39,15 @@ export const OPAY_API_URL = "https://sandboxapi.opaycheckout.com/api/v1/internat
 // Bank Details
 export const BANK_DETAILS = [
   {
-    bankName: "PALMPAY",
-    accountNumber: "9115149926",
-    accountName: "ONESIMUS EKENE"
+    bankName: "Moniepoint MFB",
+    accountNumber: "7010661707",
+    accountName: "Chimezie David Igwe"
   },
   // Add second account here if needed for dual accounts
   {
     bankName: "Moniepoint MFB", 
-    accountNumber: "8038657259",
-    accountName: "ONESIMUS EKENE"
+    accountNumber: "7010661707",
+    accountName: "Chimezie David Igwe (Backup)"
   }
 ];
 

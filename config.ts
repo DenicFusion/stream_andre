@@ -4,11 +4,11 @@
 export const THEME_COLOR: 'BLUE' | 'GREEN' = 'BLUE';
 
 // Payment Modes: 'TRUE' (Paystack), 'FALSE' (Transfer), 'NEUTRAL' (Transfer + Opay)
-export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'NEUTRAL';
+export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'FALSE';
 
 // If true, user goes to Dashboard (Demo Mode) after signup. 
 // If false, user goes directly to Payment page.
-export const SHOW_DASHBOARD_BEFORE_PAYMENT = true;
+export const SHOW_DASHBOARD_BEFORE_PAYMENT = false;
 
 // Payment Timer Duration (in minutes) for Manual Transfer
 export const PAYMENT_TIMER_MINUTES = 30;
@@ -18,7 +18,7 @@ export const SUPPORT_CONTACT = {
   showOnHome: true, // Show FAB on homepage
   method: 'WHATSAPP' as 'WHATSAPP' | 'TELEGRAM', // Toggle between 'WHATSAPP' and 'TELEGRAM'
   whatsappNumber: "2349012345678", 
-  telegramUrl: "https://t.me/streamafrica_official"
+  telegramUrl: "https://t.me/official_vendor_md"
 };
 
 // Opay Configuration
@@ -34,15 +34,15 @@ export const OPAY_API_URL = "https://sandboxapi.opaycheckout.com/api/v1/internat
 // Bank Details
 export const BANK_DETAILS = [
   {
-    bankName: "Moniepoint MFB",
-    accountNumber: "7010661707",
-    accountName: "Chimezie David Igwe"
+    bankName: "PALMPAY",
+    accountNumber: "9115149926",
+    accountName: "ONESIMUS EKENE"
   },
   // Add second account here if needed for dual accounts
   {
-    bankName: "Moniepoint MFB", 
-    accountNumber: "7010661707",
-    accountName: "Chimezie David Igwe (Backup)"
+    bankName: "MONIEPOINT MFB", 
+    accountNumber: "8038657259",
+    accountName: "ONESIMUS EKENE"
   }
 ];
 

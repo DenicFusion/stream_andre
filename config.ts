@@ -1,12 +1,10 @@
-/// <reference types="vite/client" />
-
 // GLOBAL CONFIGURATION
 
 // Theme Color: 'BLUE' (Cyan/Blue) or 'GREEN' (Emerald/Green)
 export const THEME_COLOR: 'BLUE' | 'GREEN' = 'BLUE';
 
 // Payment Modes: 'TRUE' (Paystack), 'FALSE' (Transfer), 'NEUTRAL' (Transfer + Opay)
-export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'FALSE';
+export const PAYMENT_MODE: 'TRUE' | 'FALSE' | 'NEUTRAL' = 'NEUTRAL';
 
 // If true, user goes to Dashboard (Demo Mode) after signup. 
 // If false, user goes directly to Payment page.
@@ -26,7 +24,7 @@ export const SUPPORT_CONTACT = {
 // Groq AI Configuration for Payment Verification
 // SECURITY UPDATE: We now use an environment variable.
 // Do NOT paste the key here directly. Add VITE_GROQ_API_KEY to your Vercel/Netlify dashboard.
-export const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || ""; 
+export const GROQ_API_KEY = (import.meta as any).env?.VITE_GROQ_API_KEY || ""; 
 
 // Opay Configuration
 // TEST/SANDBOX KEY provided

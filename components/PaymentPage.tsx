@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from './Button';
 import { UserData } from '../types';
-import { PAYMENT_MODE, OPAY_PUBLIC_KEY, OPAY_MERCHANT_ID, OPAY_API_URL, BANK_DETAILS, THEME_COLOR, PAYMENT_TIMER_MINUTES, SUPPORT_CONTACT, GROQ_API_KEY } from '../config';
+import { PAYMENT_MODE, OPAY_PUBLIC_KEY, OPAY_MERCHANT_ID, OPAY_API_URL, BANK_DETAILS, THEME_COLOR, PAYMENT_TIMER_MINUTES, SUPPORT_CONTACT, GEMINI_API_KEY } from '../config';
 import { CustomAlert } from './CustomAlert';
+import { GoogleGenAI } from "@google/genai";
 
 interface PaymentPageProps {
   userData: UserData;
@@ -193,7 +194,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ userData, onSuccess, o
     });
   };
 
-  const verifyTransactionWithGroq = async () => {
+  const verifyTransactionWithGemini = async () => {
     if (!proofImage) {
         showAlert("Proof Required", "Please upload or drop a screenshot of your payment receipt.", "error");
         return;
@@ -208,11 +209,11 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ userData, onSuccess, o
     setAiResponseMsg('');
 
     try {
-        const base64Image = await fileToBase64(proofImage);
+        const fullBase64 = await fileToBase64(proofImage);
         
         // Anti-Fraud: Hash the image base64 (first 100 chars) to prevent reusing exact same file
         const usedProofs = JSON.parse(localStorage.getItem('stream_used_proofs') || '[]');
-        const proofHash = btoa(base64Image.slice(0, 100) + proofImage.name + proofImage.size);
+        const proofHash = btoa(fullBase64.slice(0, 100) + proofImage.name + proofImage.size);
         
         if (usedProofs.includes(proofHash)) {
              throw new Error("Fraud Detected: This specific screenshot has already been used.");
@@ -220,62 +221,54 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ userData, onSuccess, o
 
         const selectedBank = BANK_DETAILS[selectedBankIndex];
         
-        if (!GROQ_API_KEY) {
-            throw new Error("System Error: AI API Key Missing.");
+        if (!GEMINI_API_KEY) {
+            throw new Error("System Error: Gemini API Key Missing.");
         }
 
-        // Updated Model to 90b-vision-preview
-        const payload = {
-            model: "llama-3.2-90b-vision-preview",
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        {
-                            type: "text",
-                            text: `Analyze this payment receipt image carefully.
-                            I am expecting a transfer of roughly 12,000 NGN.
-                            It should be sent to "${selectedBank.bankName}" or an account ending in that bank's number if visible.
-                            
-                            Task:
-                            1. Look for the Amount. Is it approx 12,000?
-                            2. Look for "Successful", "Success", "Sent", or "Approved".
-                            3. Look for the Destination Bank or Account Name matching "${selectedBank.bankName}" or "${selectedBank.accountName}".
-                            
-                            Return ONLY a JSON object with this format:
-                            { "verified": boolean, "reason": "short explanation" }`
-                        },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: base64Image
-                            }
-                        }
-                    ]
-                }
-            ],
-            temperature: 0.1,
-            max_tokens: 300,
-            response_format: { type: "json_object" }
-        };
+        // Initialize Gemini Client
+        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        
+        // Prepare Image Data (Strip prefix)
+        const match = fullBase64.match(/^data:(.+);base64,(.+)$/);
+        const mimeType = match ? match[1] : 'image/jpeg';
+        const base64Data = match ? match[2] : fullBase64.split(',')[1];
 
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${GROQ_API_KEY}`,
-                "Content-Type": "application/json"
+        // Prepare Prompt
+        const promptText = `Analyze this payment receipt image carefully.
+        I am expecting a transfer of roughly 12,000 NGN.
+        It should be sent to "${selectedBank.bankName}" or an account ending in that bank's number if visible.
+        
+        Task:
+        1. Look for the Amount. Is it approx 12,000?
+        2. Look for "Successful", "Success", "Sent", or "Approved".
+        3. Look for the Destination Bank or Account Name matching "${selectedBank.bankName}" or "${selectedBank.accountName}".
+        
+        Return ONLY a JSON object with this format:
+        { "verified": boolean, "reason": "short explanation" }`;
+
+        // Call Gemini Model
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: {
+                parts: [
+                    {
+                        inlineData: {
+                            mimeType: mimeType,
+                            data: base64Data
+                        }
+                    },
+                    {
+                        text: promptText
+                    }
+                ]
             },
-            body: JSON.stringify(payload)
+            config: {
+                responseMimeType: "application/json" 
+            }
         });
 
-        const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(data.error.message || "AI Analysis Failed");
-        }
-
-        const content = data.choices[0].message.content;
-        const result = JSON.parse(content);
+        const resultText = response.text || "{}";
+        const result = JSON.parse(resultText);
 
         if (result.verified) {
             setAiVerified(true);
@@ -301,7 +294,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ userData, onSuccess, o
   };
 
   const handleTransferDone = () => {
-      if (!aiVerified && GROQ_API_KEY) {
+      if (!aiVerified && GEMINI_API_KEY) {
           showAlert("Verification Required", "Please upload proof and verify with AI first.", "error");
           return;
       }
@@ -520,12 +513,12 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ userData, onSuccess, o
 
                         <div className="mt-4">
                             <Button 
-                                onClick={verifyTransactionWithGroq}
+                                onClick={verifyTransactionWithGemini}
                                 fullWidth 
                                 className={`py-3 text-sm !bg-gray-800 hover:!bg-black`}
                                 disabled={isVerifying || aiVerified || timeLeft <= 0 || !proofImage}
                             >
-                                {isVerifying ? 'Analyzing Image...' : aiVerified ? 'Verified Successfully' : 'Verify Proof with AI'}
+                                {isVerifying ? 'Analyzing Receipt...' : aiVerified ? 'Verified Successfully' : 'Verify Proof with AI'}
                             </Button>
                         </div>
                     </div>

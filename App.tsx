@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { Features } from './components/Features';
@@ -9,17 +9,14 @@ import { Footer } from './components/Footer';
 import { SignupForm } from './components/SignupForm';
 import { PaymentPage } from './components/PaymentPage';
 import { ScrollToTop } from './components/ScrollToTop';
-import { Dashboard } from './components/Dashboard';
-import { NotificationToast } from './components/NotificationToast';
 import { ViewState, UserData } from './types';
 import { Button } from './components/Button';
-import { SHOW_DASHBOARD_BEFORE_PAYMENT } from './config';
 
 // CONFIGURATION FOR REDIRECT
 const REDIRECT_CONFIG = {
-  useWhatsApp: false, 
-  whatsAppNumber: "2349045942678", 
-  telegramUrl: "https://t.me/official_vendor_md"
+  useWhatsApp: true, // Set to true to use WhatsApp, false for Telegram
+  whatsAppNumber: "2349012345678", // Your WhatsApp number without '+'
+  telegramUrl: "https://t.me/streamafrica_official" // Your Telegram Channel/Group link
 };
 
 const Loader: React.FC = () => (
@@ -37,93 +34,37 @@ const Loader: React.FC = () => (
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [paymentRef, setPaymentRef] = useState<string>('');
-  const [paymentBank, setPaymentBank] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 1. Browser History Handling for Mobile Back Button
-  useEffect(() => {
-    // Push initial state
-    window.history.replaceState({ view: 'HOME' }, '');
-
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state && event.state.view) {
-        setCurrentView(event.state.view);
-      } else {
-        // Default to home if no state
-        setCurrentView('HOME');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Helper to handle navigation with 1.5s loader
+  // Helper to handle navigation with 3s loader
   const transitionTo = (view: ViewState) => {
     setIsLoading(true);
-    
-    // Update history
-    window.history.pushState({ view }, '', `#${view.toLowerCase()}`);
-
     setTimeout(() => {
       setCurrentView(view);
       setIsLoading(false);
       window.scrollTo(0, 0);
-    }, 1500); 
+    }, 3000);
   };
 
-  const handleAuthSubmit = (data: UserData) => {
+  const handleSignupSubmit = (data: UserData) => {
     setUserData(data);
-    
-    if (data.isActivated) {
-        transitionTo('DASHBOARD');
-        return;
-    }
-
-    if (SHOW_DASHBOARD_BEFORE_PAYMENT) {
-       transitionTo('DASHBOARD');
-    } else {
-       transitionTo('PAYMENT');
-    }
+    transitionTo('PAYMENT');
   };
 
-  const handlePaymentSuccess = (reference: string, bankInfo?: string) => {
-    setPaymentRef(reference);
-    setPaymentBank(bankInfo || '');
-    
-    if (userData) {
-        const updatedUser = { ...userData, isActivated: true };
-        setUserData(updatedUser);
-        localStorage.setItem('stream_user', JSON.stringify(updatedUser));
-    }
-
+  const handlePaymentSuccess = () => {
     transitionTo('SUCCESS');
   };
 
   const handleRedirect = () => {
-    if (userData) {
-      const isManual = !!paymentBank && !paymentRef;
+    if (REDIRECT_CONFIG.useWhatsApp && userData) {
+      // Create a pre-filled message with user details
+      const message = `Hello Stream Africa,%0A%0AI have just completed my payment and registration.%0A%0A*Here are my details:*%0AName: ${userData.name}%0AUsername: ${userData.username}%0AEmail: ${userData.email}%0APhone: ${userData.phone}%0A%0APlease verify my account.`;
       
-      let message = `Hello Stream Africa,%0A%0AI have just completed my payment and registration.`;
-      
-      if (isManual) {
-          message += `%0A%0A*Method:* Manual Bank Transfer%0A*Paid to:* ${paymentBank}`;
-      } else {
-          message += `%0A%0A*Method:* Instant Online Payment%0A*Ref:* ${paymentRef}`;
-      }
-
-      message += `%0A%0A*Details:*%0AName: ${userData.name}%0AUsername: ${userData.username}%0APhone: ${userData.phone}%0A%0APlease verify my account activation.`;
-      
-      if (REDIRECT_CONFIG.useWhatsApp) {
-        const url = `https://wa.me/${REDIRECT_CONFIG.whatsAppNumber}?text=${message}`;
-        window.location.href = url;
-      } else {
-        const baseUrl = REDIRECT_CONFIG.telegramUrl;
-        const separator = baseUrl.includes('?') ? '&' : '?';
-        const url = `${baseUrl}${separator}text=${message}`;
-        window.location.href = url;
-      }
+      const url = `https://wa.me/${REDIRECT_CONFIG.whatsAppNumber}?text=${message}`;
+      window.location.href = url;
+    } else {
+      // Telegram does not support pre-filled messages via URL in the same way for channels
+      window.location.href = REDIRECT_CONFIG.telegramUrl;
     }
   };
 
@@ -132,7 +73,6 @@ const App: React.FC = () => {
       case 'HOME':
         return (
           <>
-            <NotificationToast type="REGISTER" />
             <Navbar onNavigate={transitionTo} currentView="HOME" />
             <Hero onSignup={() => transitionTo('SIGNUP')} />
             <About />
@@ -146,71 +86,42 @@ const App: React.FC = () => {
       case 'SIGNUP':
         return (
           <SignupForm 
-            onSubmit={handleAuthSubmit} 
-            onBack={() => window.history.back()} 
-            initialData={userData}
+            onSubmit={handleSignupSubmit} 
+            onBack={() => transitionTo('HOME')} 
           />
         );
-      case 'DASHBOARD':
-        if (!userData) return <SignupForm onSubmit={handleAuthSubmit} onBack={() => window.history.back()} />;
-        return (
-           <Dashboard 
-              userData={userData} 
-              onActivate={() => transitionTo('PAYMENT')} 
-           />
-        );
       case 'PAYMENT':
-        if (!userData) return <SignupForm onSubmit={handleAuthSubmit} onBack={() => window.history.back()} />;
+        if (!userData) return <SignupForm onSubmit={handleSignupSubmit} onBack={() => transitionTo('HOME')} />;
         return (
           <PaymentPage 
             userData={userData} 
             onSuccess={handlePaymentSuccess} 
-            onBack={() => window.history.back()} 
+            onBack={() => transitionTo('SIGNUP')} 
           />
         );
       case 'SUCCESS':
-        const isManual = !!paymentBank && !paymentRef;
         return (
           <div className="min-h-screen bg-stream-dark flex items-center justify-center p-4">
-            <div className="text-center max-w-lg w-full bg-stream-card p-10 rounded-3xl border border-stream-green/20 shadow-2xl relative overflow-hidden">
-              <div className="w-20 h-20 bg-stream-green/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                <svg className="w-10 h-10 text-stream-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center max-w-lg w-full bg-stream-card p-10 rounded-3xl border border-stream-green/20 shadow-2xl">
+              <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-4xl font-bold text-white mb-4 relative z-10">
-                 {isManual ? 'Transfer Received!' : 'Activation Success!'}
-              </h2>
-              <p className="text-xl text-gray-300 mb-6 relative z-10">
-                {isManual 
-                  ? 'Your transfer notification has been received. Our team will verify your payment shortly.' 
-                  : 'Your payment was successful. Your account is now fully active and verified.'}
+              <h2 className="text-4xl font-bold text-white mb-4">Welcome to STREAM!</h2>
+              <p className="text-xl text-gray-300 mb-8">
+                Your payment was successful. Your account is now active. Please join our official community to complete your onboarding.
               </p>
-              
-              <div className="bg-white/5 p-4 rounded-xl mb-8 border border-white/5 relative z-10">
-                <p className="text-xs text-gray-500 mb-1 uppercase tracking-widest font-bold">
-                  {isManual ? 'Chosen Bank Account' : 'Payment Reference'}
-                </p>
-                <div className="font-mono text-white text-sm break-all select-all font-bold">
-                  {isManual ? paymentBank : paymentRef}
+              <div className="bg-white/5 p-4 rounded-xl mb-8 border border-white/5">
+                <p className="text-sm text-gray-400 mb-1">Status</p>
+                <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-lg">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  ACTIVE & VERIFIED
                 </div>
               </div>
-
-              <div className="mb-6 relative z-10">
-                 <p className="text-stream-green font-semibold animate-pulse text-sm uppercase tracking-wide">
-                   ⚠️ Kindly click the button below to continue
-                 </p>
-              </div>
-              <div className="relative group z-10">
-                <div className="absolute -inset-1 bg-stream-green rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                <Button 
-                    onClick={handleRedirect} 
-                    fullWidth 
-                    className="relative text-lg py-4 !shadow-[0_0_20px_rgba(14,165,233,0.4)] !border-none"
-                >
-                  {REDIRECT_CONFIG.useWhatsApp ? 'Finalize on WhatsApp' : 'Finalize on Telegram'}
-                </Button>
-              </div>
+              <Button onClick={handleRedirect} fullWidth className="text-lg py-4">
+                {REDIRECT_CONFIG.useWhatsApp ? 'Complete Registration on WhatsApp' : 'Join Telegram Channel'}
+              </Button>
             </div>
           </div>
         );

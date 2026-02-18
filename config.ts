@@ -34,9 +34,9 @@ export const OPAY_API_URL = "https://sandboxapi.opaycheckout.com/api/v1/internat
 // Bank Details
 export const BANK_DETAILS = [
   {
-    bankName: "PALMPAY",
-    accountNumber: "9115149926",
-    accountName: "ONESIMUS EKENE"
+    bankName: "KUDA",
+    accountNumber: "2082650377",
+    accountName: "ONESIMUS EKENE JEPPOE"
   },
   // Add second account here if needed for dual accounts
   {
